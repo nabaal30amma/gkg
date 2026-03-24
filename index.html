@@ -1,0 +1,381 @@
+import React, { useState, useEffect } from 'react';
+import { Calculator, Wheat, Package, Scale, Info, TrendingDown, TrendingUp, Wallet, Receipt, Lightbulb } from 'lucide-react';
+
+export default function App() {
+  // State untuk Input Data
+  const [beratGkg, setBeratGkg] = useState(1000); // dalam kg
+  const [hargaBeliGkg, setHargaBeliGkg] = useState(7500); // Rp / kg
+  const [biayaGiling, setBiayaGiling] = useState(500); // Rp / kg BERAS 
+  const [hargaJualDedak, setHargaJualDedak] = useState(3000); // Rp / kg
+  const [hargaJualBeras, setHargaJualBeras] = useState(12500); // Rp / kg 
+
+  // State untuk Persentase Rendemen
+  const [rendemenBeras, setRendemenBeras] = useState(63); // %
+  const [rendemenDedak, setRendemenDedak] = useState(5); // % (Diperbarui default: 5)
+
+  // State untuk Hasil Perhitungan
+  const [hasil, setHasil] = useState({
+    totalBeras: 0,
+    totalDedak: 0,
+    totalMerangSusut: 0,
+    totalModalGabah: 0,
+    totalBiayaGiling: 0,
+    totalModalKotor: 0,
+    pendapatanDedak: 0,
+    pendapatanBeras: 0,
+    totalOmzet: 0,
+    modalBersih: 0,
+    hppBeras: 0,
+    labaBersih: 0,
+  });
+
+  // Fungsi format Rupiah
+  const formatRupiah = (angka) => {
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(angka);
+  };
+
+  // Kalkulasi otomatis setiap kali input berubah
+  useEffect(() => {
+    // 1. Hitung Hasil Fisik
+    const beras = beratGkg * (rendemenBeras / 100);
+    const dedak = beratGkg * (rendemenDedak / 100);
+    const merangSusut = beratGkg - beras - dedak;
+
+    // 2. Hitung Biaya
+    const modalGabah = beratGkg * hargaBeliGkg;
+    const biayaOperasional = beras * biayaGiling; // Biaya giling dikali BERAS
+    const modalKotor = modalGabah + biayaOperasional;
+    
+    // 3. Hitung Pendapatan
+    const jualDedak = dedak * hargaJualDedak;
+    const jualBeras = beras * hargaJualBeras;
+    const omzet = jualBeras + jualDedak;
+    
+    // 4. Analisis Akhir
+    const bersih = modalKotor - jualDedak; 
+    const hpp = beras > 0 ? bersih / beras : 0;
+    const laba = omzet - modalKotor;
+
+    setHasil({
+      totalBeras: beras,
+      totalDedak: dedak,
+      totalMerangSusut: merangSusut,
+      totalModalGabah: modalGabah,
+      totalBiayaGiling: biayaOperasional,
+      totalModalKotor: modalKotor,
+      pendapatanDedak: jualDedak,
+      pendapatanBeras: jualBeras,
+      totalOmzet: omzet,
+      modalBersih: bersih,
+      hppBeras: hpp,
+      labaBersih: laba,
+    });
+  }, [beratGkg, hargaBeliGkg, biayaGiling, hargaJualDedak, hargaJualBeras, rendemenBeras, rendemenDedak]);
+
+  return (
+    <div className="min-h-screen bg-slate-50 p-4 md:p-8 font-sans text-slate-800">
+      <div className="max-w-5xl mx-auto space-y-6">
+        
+        {/* Header */}
+        <div className="bg-emerald-600 text-white rounded-2xl p-6 shadow-lg flex items-center space-x-4">
+          <div className="bg-white/20 p-3 rounded-full hidden sm:block">
+            <Calculator className="w-8 h-8 text-white" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold">Kalkulator Penggilingan Padi</h1>
+            <p className="text-emerald-100 text-sm mt-1">
+              Simulasi HPP, Pendapatan, dan Analisis Laba
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          
+          {/* KOLOM KIRI: PANEL INPUT */}
+          <div className="lg:col-span-5 space-y-6">
+            
+            {/* Input Data Keuangan */}
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+              <h2 className="text-lg font-semibold border-b pb-3 mb-4 flex items-center text-slate-700">
+                <Receipt className="w-5 h-5 mr-2 text-emerald-600" />
+                Data Input Keuangan
+              </h2>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-600 mb-1">Berat GKG Input (Kg)</label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      value={beratGkg}
+                      onChange={(e) => setBeratGkg(Number(e.target.value))}
+                      className="w-full pl-3 pr-10 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                    />
+                    <span className="absolute right-3 top-2 text-slate-400 text-sm">Kg</span>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-600 mb-1">Harga Beli GKG (Per Kg)</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-2 text-slate-400 text-sm">Rp</span>
+                    <input
+                      type="number"
+                      value={hargaBeliGkg}
+                      onChange={(e) => setHargaBeliGkg(Number(e.target.value))}
+                      className="w-full pl-10 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div className="bg-blue-50 p-3 rounded-xl border border-blue-100">
+                  <label className="block text-sm font-semibold text-blue-800 mb-1 flex justify-between">
+                    Biaya Giling / Operasional
+                    <span className="text-xs font-normal bg-blue-200 px-2 py-0.5 rounded-full">Per Kg BERAS</span>
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-2 text-blue-600 text-sm font-medium">Rp</span>
+                    <input
+                      type="number"
+                      value={biayaGiling}
+                      onChange={(e) => setBiayaGiling(Number(e.target.value))}
+                      className="w-full pl-10 pr-3 py-2 border border-blue-300 bg-white rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium text-blue-900"
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-slate-100">
+                  <label className="block text-sm font-medium text-amber-600 mb-1">Harga Jual Dedak (Per Kg)</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-2 text-slate-400 text-sm">Rp</span>
+                    <input
+                      type="number"
+                      value={hargaJualDedak}
+                      onChange={(e) => setHargaJualDedak(Number(e.target.value))}
+                      className="w-full pl-10 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-emerald-600 mb-1">Harga Jual Beras (Per Kg)</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-2 text-slate-400 text-sm">Rp</span>
+                    <input
+                      type="number"
+                      value={hargaJualBeras}
+                      onChange={(e) => setHargaJualBeras(Number(e.target.value))}
+                      className="w-full pl-10 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Input Asumsi Rendemen */}
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+              <h2 className="text-lg font-semibold border-b pb-3 mb-4 flex items-center text-slate-700">
+                <Scale className="w-5 h-5 mr-2 text-emerald-600" />
+                Asumsi Rendemen
+              </h2>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-600 mb-1">Beras (%)</label>
+                  <input
+                    type="number"
+                    value={rendemenBeras}
+                    onChange={(e) => setRendemenBeras(Number(e.target.value))}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-600 mb-1">Dedak (%)</label>
+                  <input
+                    type="number"
+                    value={rendemenDedak}
+                    onChange={(e) => setRendemenDedak(Number(e.target.value))}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* KOLOM KANAN: PANEL HASIL */}
+          <div className="lg:col-span-7 space-y-6">
+            
+            {/* Highlight Cards (HPP & Laba) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Card HPP */}
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 text-center relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-1 bg-amber-400"></div>
+                <p className="text-slate-500 font-medium mb-1 text-sm uppercase tracking-wider">HPP Beras</p>
+                <h2 className="text-3xl font-bold text-slate-800">
+                  {formatRupiah(hasil.hppBeras)}
+                </h2>
+                <p className="text-slate-400 text-xs mt-1">Modal bersih / Kg Beras</p>
+              </div>
+
+              {/* Card Laba Bersih */}
+              <div className={`rounded-2xl shadow-sm border p-5 text-center relative overflow-hidden ${hasil.labaBersih >= 0 ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'}`}>
+                <div className={`absolute top-0 left-0 w-full h-1 ${hasil.labaBersih >= 0 ? 'bg-emerald-500' : 'bg-red-500'}`}></div>
+                <p className={`font-medium mb-1 text-sm uppercase tracking-wider ${hasil.labaBersih >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
+                  Estimasi Laba Bersih
+                </p>
+                <h2 className={`text-3xl font-bold ${hasil.labaBersih >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
+                  {formatRupiah(hasil.labaBersih)}
+                </h2>
+                <p className={`text-xs mt-1 ${hasil.labaBersih >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                  {hasil.labaBersih >= 0 ? 'Keuntungan' : 'Kerugian'} Total
+                </p>
+              </div>
+            </div>
+
+            {/* Tabel Hasil Fisik */}
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+              <h3 className="text-slate-700 font-semibold mb-3 flex items-center">
+                <Package className="w-5 h-5 mr-2 text-emerald-600" />
+                Hasil Fisik Gilingan
+              </h3>
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 relative">
+                  <div className="absolute -top-2 -right-2 bg-blue-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">Basis Biaya</div>
+                  <Wheat className="w-5 h-5 mx-auto text-amber-500 mb-1" />
+                  <p className="text-xs text-slate-500">Beras</p>
+                  <p className="font-semibold text-slate-800">{hasil.totalBeras.toLocaleString('id-ID')} Kg</p>
+                </div>
+                <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                  <Package className="w-5 h-5 mx-auto text-amber-700 mb-1" />
+                  <p className="text-xs text-slate-500">Dedak</p>
+                  <p className="font-semibold text-slate-800">{hasil.totalDedak.toLocaleString('id-ID')} Kg</p>
+                </div>
+                <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                  <TrendingDown className="w-5 h-5 mx-auto text-slate-400 mb-1" />
+                  <p className="text-xs text-slate-500">Merang/Susut</p>
+                  <p className="font-semibold text-slate-800">{hasil.totalMerangSusut.toLocaleString('id-ID')} Kg</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Rincian Keuangan */}
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+              <h3 className="text-slate-700 font-semibold mb-4 flex items-center">
+                <Wallet className="w-5 h-5 mr-2 text-emerald-600" />
+                Laporan Keuangan
+              </h3>
+              
+              <div className="space-y-4 text-sm">
+                
+                {/* Bagian Modal */}
+                <div>
+                  <p className="font-medium text-slate-500 mb-2 uppercase text-xs">Biaya & Modal</p>
+                  <div className="flex justify-between items-center text-slate-600 mb-1">
+                    <span>Modal Beli Gabah</span>
+                    <span>{formatRupiah(hasil.totalModalGabah)}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-slate-600 mb-2">
+                    <span>Biaya Operasional ({hasil.totalBeras} Kg x {formatRupiah(biayaGiling)})</span>
+                    <span>{formatRupiah(hasil.totalBiayaGiling)}</span>
+                  </div>
+                  <div className="flex justify-between items-center font-semibold text-slate-800 bg-slate-100 p-2 rounded">
+                    <span>Total Modal Kotor</span>
+                    <span>{formatRupiah(hasil.totalModalKotor)}</span>
+                  </div>
+                </div>
+
+                <hr className="border-slate-100" />
+
+                {/* Bagian Pendapatan */}
+                <div>
+                  <p className="font-medium text-slate-500 mb-2 uppercase text-xs">Pendapatan / Omzet</p>
+                  <div className="flex justify-between items-center text-slate-600 mb-1">
+                    <span>Penjualan Beras</span>
+                    <span>{formatRupiah(hasil.pendapatanBeras)}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-slate-600 mb-2">
+                    <span>Penjualan Dedak (+)</span>
+                    <span>{formatRupiah(hasil.pendapatanDedak)}</span>
+                  </div>
+                  <div className="flex justify-between items-center font-semibold text-emerald-800 bg-emerald-50 p-2 rounded">
+                    <span>Total Omzet</span>
+                    <span>{formatRupiah(hasil.totalOmzet)}</span>
+                  </div>
+                </div>
+
+                <hr className="border-slate-100" />
+
+                {/* Bagian Laba Bersih */}
+                <div className="flex justify-between items-center font-bold text-lg pt-2">
+                  <span className="text-slate-800">Laba Bersih</span>
+                  <span className={hasil.labaBersih >= 0 ? "text-emerald-600" : "text-red-600"}>
+                    {formatRupiah(hasil.labaBersih)}
+                  </span>
+                </div>
+
+              </div>
+            </div>
+
+            {/* Info Box Margin */}
+            <div className="bg-blue-50 text-blue-800 p-4 rounded-xl text-sm border border-blue-100 flex items-start">
+              <Info className="w-5 h-5 mr-3 flex-shrink-0 mt-0.5" />
+              <div>
+                <strong>Margin Laba: </strong> 
+                Anda mendapatkan keuntungan sekitar <strong>{hasil.totalOmzet > 0 ? ((hasil.labaBersih / hasil.totalOmzet) * 100).toFixed(2) : 0}%</strong> dari total omzet. Pastikan harga jual beras Anda selalu lebih tinggi dari angka <em>HPP Beras</em> agar tidak merugi.
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        {/* SECTION: ANALISIS MANA YANG LEBIH BERPENGARUH */}
+        <div className="bg-amber-50 rounded-2xl border border-amber-200 p-6 md:p-8 mt-8">
+          <div className="flex items-start">
+            <div className="bg-amber-100 p-3 rounded-full mr-4 flex-shrink-0">
+              <Lightbulb className="w-6 h-6 text-amber-600" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-amber-900 mb-2">
+                Analisis: Harga Gabah vs Harga Beras, Mana yang Lebih Berpengaruh?
+              </h3>
+              <p className="text-amber-800 mb-4 leading-relaxed">
+                Secara matematis, <strong>Harga Beli Gabah (GKG)</strong> jauh lebih sensitif dan lebih berpengaruh terhadap naik-turunnya keuntungan Anda dibandingkan dengan Harga Jual Beras. Mengapa demikian? <strong>Perbedaan Volume (Bobot)</strong>.
+              </p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <div className="bg-white rounded-xl p-4 border border-amber-100 shadow-sm">
+                  <h4 className="font-semibold text-slate-800 flex items-center mb-2">
+                    <TrendingDown className="w-4 h-4 mr-2 text-red-500" />
+                    Dampak Perubahan Harga Gabah
+                  </h4>
+                  <p className="text-sm text-slate-600">
+                    Anda membeli gabah dalam volume penuh (100%). Jika harga gabah naik <strong>Rp 100/kg</strong>, maka untuk 1 ton (1.000 kg), modal Anda akan membengkak sebesar <strong>Rp 100.000</strong>.
+                  </p>
+                </div>
+                <div className="bg-white rounded-xl p-4 border border-amber-100 shadow-sm">
+                  <h4 className="font-semibold text-slate-800 flex items-center mb-2">
+                    <TrendingUp className="w-4 h-4 mr-2 text-emerald-500" />
+                    Dampak Perubahan Harga Beras
+                  </h4>
+                  <p className="text-sm text-slate-600">
+                    Anda hanya menjual beras sekitar {rendemenBeras}% dari gabah awal. Jika harga beras Anda naik <strong>Rp 100/kg</strong>, untuk 1 ton gabah (menghasilkan {hasil.totalBeras} kg beras), pendapatan Anda hanya bertambah <strong>Rp {(100 * (rendemenBeras/100) * 1000).toLocaleString('id-ID')}</strong>.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-5 p-4 bg-amber-100/50 rounded-lg text-amber-900 text-sm border-l-4 border-amber-500">
+                <strong>💡 Kesimpulan Bisnis:</strong> Bernegosiasi dan menekan <em>harga beli gabah</em> atau mencari gabah dengan <em>kualitas rendemen yang lebih tinggi</em> jauh lebih krusial untuk menyelamatkan laba Anda daripada sekadar mengandalkan kenaikan harga jual beras di pasar yang seringkali sulit dikontrol.
+              </div>
+            </div>
+          </div>
+        </div>
+        
+      </div>
+    </div>
+  );
+}
